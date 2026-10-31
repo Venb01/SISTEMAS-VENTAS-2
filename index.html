@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f2937">
+  <meta name="description" content="Sistema de ventas e inventario para pequeños negocios en Bolivia. Funciona sin conexión.">
+  <title>Sistema de Ventas e Inventario</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="responsive.css">
+</head>
+<body>
+
+  <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
+
+  <div id="app" class="app">
+
+    <!-- ============ MENÚ LATERAL ============ -->
+    <aside id="sidebar" class="sidebar" aria-label="Menú principal">
+      <div class="sidebar-marca">
+        <span class="marca-icono" aria-hidden="true">&#127978;</span>
+        <span id="sidebar-nombre-negocio" class="marca-nombre">Mi Negocio</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#inicio" class="nav-link" data-vista="inicio">Inicio</a>
+        <a href="#ventas" class="nav-link" data-vista="ventas">Vender</a>
+        <a href="#productos" class="nav-link" data-vista="productos">Productos</a>
+        <a href="#inventario" class="nav-link" data-vista="inventario">Inventario</a>
+        <a href="#compras" class="nav-link" data-vista="compras">Comprar</a>
+        <a href="#gastos" class="nav-link" data-vista="gastos">Gastos</a>
+        <a href="#caja" class="nav-link" data-vista="caja">Caja</a>
+        <a href="#historial" class="nav-link" data-vista="historial">Historial</a>
+        <a href="#reportes" class="nav-link" data-vista="reportes">Reportes</a>
+        <a href="#configuracion" class="nav-link" data-vista="configuracion">Configuración</a>
+      </nav>
+
+      <div class="sidebar-pie">
+        <span id="estado-conexion" class="estado-conexion" role="status">En línea</span>
+        <span class="version">v1.0 · Datos locales</span>
+      </div>
+    </aside>
+    <div id="sidebar-fondo" class="sidebar-fondo" hidden></div>
+
+    <!-- ============ ÁREA PRINCIPAL ============ -->
+    <div class="principal">
+
+      <!-- BARRA SUPERIOR -->
+      <header class="topbar">
+        <button type="button" id="btn-menu" class="btn btn-icono btn-menu" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">&#9776;</button>
+        <div class="topbar-titulo">
+          <h1 id="topbar-nombre-negocio">Mi Negocio</h1>
+          <p id="topbar-vista" class="topbar-vista">Inicio</p>
+        </div>
+        <div class="topbar-acciones">
+          <span id="topbar-caja" class="chip chip-neutro" title="Estado de la caja">Caja cerrada</span>
+          <span id="topbar-fecha" class="topbar-fecha"></span>
+          <button type="button" id="btn-ir-vender" class="btn btn-primario">Nueva venta</button>
+        </div>
+      </header>
+
+      <!-- MENSAJES -->
+      <div id="mensajes" class="mensajes" role="status" aria-live="polite"></div>
+
+      <main id="contenido-principal" class="contenido" tabindex="-1">
+
+        <!-- ========== VISTA: INICIO ========== -->
+        <section id="vista-inicio" class="vista" data-vista="inicio" hidden>
+          <div class="vista-cabecera">
+            <h2>Resumen del día</h2>
+            <div class="acciones">
+              <button type="button" class="btn btn-primario" data-ir="ventas">Ir a vender</button>
+              <button type="button" class="btn" data-ir="inventario">Ver inventario</button>
+            </div>
+          </div>
+
+          <div class="indicadores">
+            <article class="indicador"><h3>Ventas del día</h3><p id="ind-ventas-dia" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Número de ventas</h3><p id="ind-num-ventas" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Unidades vendidas</h3><p id="ind-unidades" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Ganancia bruta estimada</h3><p id="ind-ganancia" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Gastos del día</h3><p id="ind-gastos-dia" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Productos con poco stock</h3><p id="ind-poco-stock" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Productos agotados</h3><p id="ind-agotados" class="indicador-valor">0</p></article>
+          </div>
+
+          <div class="rejilla-2">
+            <section class="panel">
+              <h3>Últimas ventas</h3>
+              <div class="tabla-contenedor">
+                <table class="tabla" id="tabla-ultimas-ventas">
+                  <thead><tr><th>N.º</th><th>Hora</th><th>Método</th><th class="num">Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p id="vacio-ultimas-ventas" class="vacio">Aún no hay ventas registradas hoy.</p>
+            </section>
+
+            <section class="panel">
+              <h3>Stock bajo y agotados</h3>
+              <div class="tabla-contenedor">
+                <table class="tabla" id="tabla-stock-bajo">
+                  <thead><tr><th>Producto</th><th class="num">Stock</th><th class="num">Mínimo</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p id="vacio-stock-bajo" class="vacio">No hay productos con poco stock.</p>
+            </section>
+          </div>
+        </section>
+
+        <!-- ========== VISTA: PUNTO DE VENTA ========== -->
+        <section id="vista-ventas" class="vista" data-vista="ventas" hidden>
+          <div class="vista-cabecera">
+            <h2>Punto de venta</h2>
+            <div class="acciones">
+              <button type="button" id="btn-vaciar-carrito" class="btn">Vaciar carrito</button>
+            </div>
+          </div>
+
+          <div class="pos">
+            <!-- Columna izquierda: escaneo, búsqueda y carrito -->
+            <div class="pos-izquierda">
+              <section class="panel">
+                <label for="pos-codigo" class="etiqueta">Escanear o escribir código de barras</label>
+                <div class="fila-entrada">
+                  <input type="text" id="pos-codigo" class="entrada entrada-grande" inputmode="numeric" autocomplete="off" placeholder="Escanee el código y presione Enter" autofocus>
+                  <button type="button" id="btn-pos-buscar-codigo" class="btn btn-primario">Agregar</button>
+                  <button type="button" id="btn-pos-camara" class="btn">Usar cámara</button>
+                </div>
+
+                <label for="pos-buscar" class="etiqueta">Buscar por nombre</label>
+                <div class="busqueda-flotante">
+                  <input type="search" id="pos-buscar" class="entrada" autocomplete="off" placeholder="Nombre, marca o categoría">
+                  <ul id="pos-resultados" class="resultados-busqueda" role="listbox" hidden></ul>
+                </div>
+              </section>
+
+              <section class="panel">
+                <h3>Carrito</h3>
+                <div class="tabla-contenedor">
+                  <table class="tabla" id="tabla-carrito">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th class="num">Precio</th>
+                        <th class="num">Cantidad</th>
+                        <th class="num">Descuento (Bs)</th>
+                        <th class="num">Subtotal</th>
+                        <th><span class="solo-lectores">Quitar</span></th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <p id="vacio-carrito" class="vacio">El carrito está vacío. Escanee un producto o búsquelo por nombre.</p>
+              </section>
+            </div>
+
+            <!-- Columna derecha: cobro -->
+            <aside class="pos-derecha">
+              <section class="panel panel-cobro">
+                <h3>Cobro</h3>
+
+                <dl class="totales">
+                  <div><dt>Productos</dt><dd id="pos-items">0</dd></div>
+                  <div><dt>Subtotal</dt><dd id="pos-subtotal">Bs 0.00</dd></div>
+                  <div><dt>Descuento</dt><dd id="pos-descuento">Bs 0.00</dd></div>
+                  <div class="total-final"><dt>Total a pagar</dt><dd id="pos-total">Bs 0.00</dd></div>
+                </dl>
+
+                <label for="pos-descuento-general" class="etiqueta">Descuento general (Bs)</label>
+                <input type="number" id="pos-descuento-general" class="entrada" min="0" step="0.01" value="0">
+
+                <label for="pos-metodo" class="etiqueta">Método de pago</label>
+                <select id="pos-metodo" class="entrada">
+                  <option value="efectivo">Efectivo</option>
+                  <option value="qr">QR</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="mixto">Pago mixto</option>
+                </select>
+
+                <div id="pos-pago-simple">
+                  <label for="pos-recibido" class="etiqueta">Importe recibido (Bs)</label>
+                  <input type="number" id="pos-recibido" class="entrada" min="0" step="0.01" placeholder="0.00">
+                  <p class="cambio">Cambio: <strong id="pos-cambio">Bs 0.00</strong></p>
+                </div>
+
+                <fieldset id="pos-pago-mixto" class="grupo" hidden>
+                  <legend>Pago mixto</legend>
+                  <label for="pos-mixto-efectivo" class="etiqueta">Efectivo (Bs)</label>
+                  <input type="number" id="pos-mixto-efectivo" class="entrada" min="0" step="0.01" value="0">
+                  <label for="pos-mixto-qr" class="etiqueta">QR (Bs)</label>
+                  <input type="number" id="pos-mixto-qr" class="entrada" min="0" step="0.01" value="0">
+                  <label for="pos-mixto-transferencia" class="etiqueta">Transferencia (Bs)</label>
+                  <input type="number" id="pos-mixto-transferencia" class="entrada" min="0" step="0.01" value="0">
+                  <p class="cambio">Falta por cubrir: <strong id="pos-mixto-falta">Bs 0.00</strong></p>
+                </fieldset>
+
+                <label for="pos-nota" class="etiqueta">Nota (opcional)</label>
+                <input type="text" id="pos-nota" class="entrada" maxlength="120" placeholder="Referencia o comentario">
+
+                <button type="button" id="btn-confirmar-venta" class="btn btn-primario btn-bloque btn-grande" disabled>Confirmar venta</button>
+                <p class="ayuda">Se emitirá un recibo interno. No es una factura fiscal.</p>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ========== VISTA: PRODUCTOS ========== -->
+        <section id="vista-productos" class="vista" data-vista="productos" hidden>
+          <div class="vista-cabecera">
+            <h2>Productos</h2>
+            <div class="acciones">
+              <button type="button" id="btn-nuevo-producto" class="btn btn-primario">Nuevo producto</button>
+              <button type="button" id="btn-importar-productos" class="btn">Importar CSV</button>
+              <button type="button" id="btn-exportar-productos" class="btn">Exportar CSV</button>
+              <button type="button" id="btn-etiquetas" class="btn">Imprimir etiquetas</button>
+              <input type="file" id="archivo-productos-csv" accept=".csv,text/csv" hidden>
+            </div>
+          </div>
+
+          <div class="filtros">
+            <div class="campo">
+              <label for="prod-buscar" class="etiqueta">Buscar</label>
+              <input type="search" id="prod-buscar" class="entrada" placeholder="Nombre, código o categoría">
+            </div>
+            <div class="campo">
+              <label for="prod-filtro-categoria" class="etiqueta">Categoría</label>
+              <select id="prod-filtro-categoria" class="entrada"><option value="">Todas</option></select>
+            </div>
+            <div class="campo">
+              <label for="prod-filtro-estado" class="etiqueta">Estado</label>
+              <select id="prod-filtro-estado" class="entrada">
+                <option value="">Todos</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="prod-filtro-stock" class="etiqueta">Stock</label>
+              <select id="prod-filtro-stock" class="entrada">
+                <option value="">Todos</option>
+                <option value="bajo">Stock bajo</option>
+                <option value="agotado">Agotados</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tabla-contenedor">
+            <table class="tabla" id="tabla-productos">
+              <thead>
+                <tr>
+                  <th>Código</th><th>Nombre</th><th>Categoría</th>
+                  <th class="num">Costo</th><th class="num">Venta</th>
+                  <th class="num">Stock</th><th>Estado</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="vacio-productos" class="vacio">No hay productos registrados. Use «Nuevo producto» para crear el primero.</p>
+        </section>
+
+        <!-- ========== VISTA: INVENTARIO ========== -->
+        <section id="vista-inventario" class="vista" data-vista="inventario" hidden>
+          <div class="vista-cabecera">
+            <h2>Inventario</h2>
+            <div class="acciones">
+              <button type="button" id="btn-mov-entrada" class="btn">Registrar entrada</button>
+              <button type="button" id="btn-mov-salida" class="btn">Registrar salida</button>
+              <button type="button" id="btn-mov-ajuste" class="btn btn-primario">Ajuste manual</button>
+            </div>
+          </div>
+
+          <div class="indicadores indicadores-compactos">
+            <article class="indicador"><h3>Productos activos</h3><p id="inv-total-productos" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Valor del inventario (costo)</h3><p id="inv-valor" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Stock bajo</h3><p id="inv-bajo" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Agotados</h3><p id="inv-agotados" class="indicador-valor">0</p></article>
+          </div>
+
+          <h3 class="subtitulo">Historial de movimientos</h3>
+          <div class="filtros">
+            <div class="campo">
+              <label for="inv-filtro-producto" class="etiqueta">Producto</label>
+              <input type="search" id="inv-filtro-producto" class="entrada" placeholder="Nombre o código">
+            </div>
+            <div class="campo">
+              <label for="inv-filtro-tipo" class="etiqueta">Tipo</label>
+              <select id="inv-filtro-tipo" class="entrada">
+                <option value="">Todos</option>
+                <option value="entrada">Entrada</option>
+                <option value="salida">Salida</option>
+                <option value="ajuste">Ajuste</option>
+                <option value="venta">Venta</option>
+                <option value="compra">Compra</option>
+                <option value="anulacion">Anulación</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="inv-filtro-desde" class="etiqueta">Desde</label>
+              <input type="date" id="inv-filtro-desde" class="entrada">
+            </div>
+            <div class="campo">
+              <label for="inv-filtro-hasta" class="etiqueta">Hasta</label>
+              <input type="date" id="inv-filtro-hasta" class="entrada">
+            </div>
+          </div>
+
+          <div class="tabla-contenedor">
+            <table class="tabla" id="tabla-movimientos">
+              <thead>
+                <tr><th>Fecha y hora</th><th>Producto</th><th>Tipo</th><th class="num">Cantidad</th><th class="num">Stock resultante</th><th>Motivo</th><th>Origen</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="vacio-movimientos" class="vacio">No hay movimientos de inventario con estos filtros.</p>
+        </section>
+
+        <!-- ========== VISTA: COMPRAS Y PROVEEDORES ========== -->
+        <section id="vista-compras" class="vista" data-vista="compras" hidden>
+          <div class="vista-cabecera">
+            <h2>Compras y proveedores</h2>
+            <div class="acciones">
+              <button type="button" id="btn-nueva-compra" class="btn btn-primario">Nueva compra</button>
+              <button type="button" id="btn-nuevo-proveedor" class="btn">Nuevo proveedor</button>
+            </div>
+          </div>
+
+          <div class="pestanas" role="tablist" aria-label="Compras y proveedores">
+            <button type="button" role="tab" class="pestana activa" id="tab-compras" aria-selected="true" aria-controls="panel-compras" data-pestana="compras">Compras</button>
+            <button type="button" role="tab" class="pestana" id="tab-proveedores" aria-selected="false" aria-controls="panel-proveedores" data-pestana="proveedores">Proveedores</button>
+          </div>
+
+          <div id="panel-compras" role="tabpanel" aria-labelledby="tab-compras">
+            <div class="filtros">
+              <div class="campo"><label for="comp-filtro-desde" class="etiqueta">Desde</label><input type="date" id="comp-filtro-desde" class="entrada"></div>
+              <div class="campo"><label for="comp-filtro-hasta" class="etiqueta">Hasta</label><input type="date" id="comp-filtro-hasta" class="entrada"></div>
+              <div class="campo"><label for="comp-filtro-proveedor" class="etiqueta">Proveedor</label><select id="comp-filtro-proveedor" class="entrada"><option value="">Todos</option></select></div>
+            </div>
+            <div class="tabla-contenedor">
+              <table class="tabla" id="tabla-compras">
+                <thead><tr><th>Fecha</th><th>Documento</th><th>Proveedor</th><th class="num">Ítems</th><th class="num">Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p id="vacio-compras" class="vacio">Aún no hay compras registradas.</p>
+          </div>
+
+          <div id="panel-proveedores" role="tabpanel" aria-labelledby="tab-proveedores" hidden>
+            <div class="tabla-contenedor">
+              <table class="tabla" id="tabla-proveedores">
+                <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Notas</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p id="vacio-proveedores" class="vacio">Aún no hay proveedores registrados.</p>
+          </div>
+        </section>
+
+        <!-- ========== VISTA: GASTOS ========== -->
+        <section id="vista-gastos" class="vista" data-vista="gastos" hidden>
+          <div class="vista-cabecera">
+            <h2>Gastos operativos</h2>
+            <div class="acciones">
+              <button type="button" id="btn-nuevo-gasto" class="btn btn-primario">Nuevo gasto</button>
+            </div>
+          </div>
+          <p class="ayuda">Aquí se registran gastos como alquiler, luz, transporte o sueldos. Las compras de mercadería se registran en «Comprar».</p>
+
+          <div class="filtros">
+            <div class="campo"><label for="gas-buscar" class="etiqueta">Buscar</label><input type="search" id="gas-buscar" class="entrada" placeholder="Descripción"></div>
+            <div class="campo"><label for="gas-filtro-categoria" class="etiqueta">Categoría</label><select id="gas-filtro-categoria" class="entrada"><option value="">Todas</option></select></div>
+            <div class="campo"><label for="gas-filtro-desde" class="etiqueta">Desde</label><input type="date" id="gas-filtro-desde" class="entrada"></div>
+            <div class="campo"><label for="gas-filtro-hasta" class="etiqueta">Hasta</label><input type="date" id="gas-filtro-hasta" class="entrada"></div>
+          </div>
+
+          <p class="resumen-linea">Total del filtro: <strong id="gas-total">Bs 0.00</strong></p>
+
+          <div class="tabla-contenedor">
+            <table class="tabla" id="tabla-gastos">
+              <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Método</th><th class="num">Importe</th><th>Acciones</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="vacio-gastos" class="vacio">Aún no hay gastos registrados.</p>
+        </section>
+
+        <!-- ========== VISTA: CAJA ========== -->
+        <section id="vista-caja" class="vista" data-vista="caja" hidden>
+          <div class="vista-cabecera">
+            <h2>Caja</h2>
+            <div class="acciones">
+              <button type="button" id="btn-abrir-caja" class="btn btn-primario">Abrir caja</button>
+              <button type="button" id="btn-caja-ingreso" class="btn">Registrar ingreso</button>
+              <button type="button" id="btn-caja-retiro" class="btn">Registrar retiro</button>
+              <button type="button" id="btn-cerrar-caja" class="btn btn-peligro">Cerrar caja</button>
+            </div>
+          </div>
+
+          <section id="caja-estado" class="panel">
+            <h3>Caja actual</h3>
+            <p id="caja-estado-texto" class="vacio">La caja está cerrada. Ábrala con el monto inicial para empezar el turno.</p>
+            <dl id="caja-detalle" class="totales" hidden>
+              <div><dt>Apertura</dt><dd id="caja-apertura-fecha">—</dd></div>
+              <div><dt>Monto inicial</dt><dd id="caja-monto-inicial">Bs 0.00</dd></div>
+              <div><dt>Ventas en efectivo</dt><dd id="caja-ventas-efectivo">Bs 0.00</dd></div>
+              <div><dt>Ventas por QR</dt><dd id="caja-ventas-qr">Bs 0.00</dd></div>
+              <div><dt>Ventas por transferencia</dt><dd id="caja-ventas-transferencia">Bs 0.00</dd></div>
+              <div><dt>Otros ingresos</dt><dd id="caja-ingresos">Bs 0.00</dd></div>
+              <div><dt>Retiros</dt><dd id="caja-retiros">Bs 0.00</dd></div>
+              <div class="total-final"><dt>Efectivo esperado</dt><dd id="caja-efectivo-esperado">Bs 0.00</dd></div>
+            </dl>
+          </section>
+
+          <h3 class="subtitulo">Historial de cajas</h3>
+          <div class="tabla-contenedor">
+            <table class="tabla" id="tabla-cajas">
+              <thead><tr><th>Apertura</th><th>Cierre</th><th class="num">Inicial</th><th class="num">Esperado</th><th class="num">Contado</th><th class="num">Diferencia</th><th>Observaciones</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="vacio-cajas" class="vacio">Aún no hay cajas registradas.</p>
+        </section>
+
+        <!-- ========== VISTA: HISTORIAL DE VENTAS ========== -->
+        <section id="vista-historial" class="vista" data-vista="historial" hidden>
+          <div class="vista-cabecera">
+            <h2>Historial de ventas</h2>
+            <div class="acciones">
+              <button type="button" id="btn-exportar-ventas" class="btn">Exportar CSV</button>
+            </div>
+          </div>
+
+          <div class="filtros">
+            <div class="campo"><label for="hist-buscar" class="etiqueta">Buscar por N.º o nota</label><input type="search" id="hist-buscar" class="entrada" placeholder="Ej. 000125"></div>
+            <div class="campo"><label for="hist-filtro-desde" class="etiqueta">Desde</label><input type="date" id="hist-filtro-desde" class="entrada"></div>
+            <div class="campo"><label for="hist-filtro-hasta" class="etiqueta">Hasta</label><input type="date" id="hist-filtro-hasta" class="entrada"></div>
+            <div class="campo">
+              <label for="hist-filtro-estado" class="etiqueta">Estado</label>
+              <select id="hist-filtro-estado" class="entrada">
+                <option value="">Todas</option>
+                <option value="completada">Completadas</option>
+                <option value="anulada">Anuladas</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tabla-contenedor">
+            <table class="tabla" id="tabla-historial">
+              <thead><tr><th>N.º</th><th>Fecha y hora</th><th>Método</th><th class="num">Ítems</th><th class="num">Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="vacio-historial" class="vacio">No hay ventas con estos filtros.</p>
+        </section>
+
+        <!-- ========== VISTA: REPORTES ========== -->
+        <section id="vista-reportes" class="vista" data-vista="reportes" hidden>
+          <div class="vista-cabecera">
+            <h2>Reportes y ganancias</h2>
+            <div class="acciones">
+              <button type="button" id="btn-exportar-reporte" class="btn">Exportar reporte CSV</button>
+              <button type="button" id="btn-imprimir-reporte" class="btn">Imprimir</button>
+            </div>
+          </div>
+
+          <div class="filtros">
+            <div class="campo">
+              <label for="rep-periodo" class="etiqueta">Período</label>
+              <select id="rep-periodo" class="entrada">
+                <option value="dia">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes">Este mes</option>
+                <option value="rango">Rango personalizado</option>
+              </select>
+            </div>
+            <div class="campo" id="rep-campo-desde" hidden><label for="rep-desde" class="etiqueta">Desde</label><input type="date" id="rep-desde" class="entrada"></div>
+            <div class="campo" id="rep-campo-hasta" hidden><label for="rep-hasta" class="etiqueta">Hasta</label><input type="date" id="rep-hasta" class="entrada"></div>
+            <div class="campo campo-boton"><button type="button" id="btn-rep-aplicar" class="btn btn-primario">Aplicar</button></div>
+          </div>
+
+          <div class="indicadores">
+            <article class="indicador"><h3>Total vendido</h3><p id="rep-total-vendido" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Ventas netas</h3><p id="rep-ventas-netas" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Número de ventas</h3><p id="rep-num-ventas" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Unidades vendidas</h3><p id="rep-unidades" class="indicador-valor">0</p></article>
+            <article class="indicador"><h3>Costo de ventas</h3><p id="rep-costo-ventas" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Margen bruto</h3><p id="rep-margen" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Gastos operativos</h3><p id="rep-gastos" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador"><h3>Compras de mercadería</h3><p id="rep-compras" class="indicador-valor">Bs 0.00</p></article>
+            <article class="indicador indicador-destacado"><h3>Utilidad operativa estimada</h3><p id="rep-utilidad" class="indicador-valor">Bs 0.00</p></article>
+          </div>
+
+          <div class="rejilla-2">
+            <section class="panel">
+              <h3>Productos más vendidos</h3>
+              <div class="tabla-contenedor">
+                <table class="tabla" id="tabla-rep-top">
+                  <thead><tr><th>Producto</th><th class="num">Unidades</th><th class="num">Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p id="vacio-rep-top" class="vacio">Sin ventas en el período.</p>
+            </section>
+
+            <section class="panel">
+              <h3>Resumen por método de pago</h3>
+              <div class="tabla-contenedor">
+                <table class="tabla" id="tabla-rep-pagos">
+                  <thead><tr><th>Método</th><th class="num">Total</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <p id="vacio-rep-pagos" class="vacio">Sin pagos en el período.</p>
+            </section>
+          </div>
+
+          <section class="panel">
+            <h3>Fórmulas utilizadas</h3>
+            <ul class="lista-formulas">
+              <li>Ventas netas = ventas − descuentos − devoluciones aplicables.</li>
+              <li>Costo de ventas = costo unitario guardado en cada línea vendida × cantidad.</li>
+              <li>Margen bruto = ventas netas − costo de ventas.</li>
+              <li>Utilidad operativa estimada = margen bruto − gastos operativos.</li>
+              <li>Las compras de mercadería no se restan de las ventas: aumentan el inventario.</li>
+            </ul>
+          </section>
+        </section>
+
+        <!-- ========== VISTA: CONFIGURACIÓN ========== -->
+        <section id="vista-configuracion" class="vista" data-vista="configuracion" hidden>
+          <div class="vista-cabecera">
+            <h2>Configuración</h2>
+          </div>
+
+          <form id="form-configuracion" class="formulario" novalidate>
+            <fieldset class="grupo">
+              <legend>Negocio y comprobante</legend>
+              <div class="campo"><label for="cfg-nombre" class="etiqueta">Nombre del negocio</label><input type="text" id="cfg-nombre" class="entrada" maxlength="60" required></div>
+              <div class="campo"><label for="cfg-moneda" class="etiqueta">Moneda</label><input type="text" id="cfg-moneda" class="entrada" value="Bs" maxlength="5"></div>
+              <div class="campo"><label for="cfg-direccion" class="etiqueta">Dirección (recibo)</label><input type="text" id="cfg-direccion" class="entrada" maxlength="120"></div>
+              <div class="campo"><label for="cfg-telefono" class="etiqueta">Teléfono (recibo)</label><input type="text" id="cfg-telefono" class="entrada" maxlength="30"></div>
+              <div class="campo"><label for="cfg-mensaje-recibo" class="etiqueta">Mensaje al pie del recibo</label><input type="text" id="cfg-mensaje-recibo" class="entrada" maxlength="120" placeholder="Gracias por su compra"></div>
+              <div class="campo">
+                <label for="cfg-formato-fecha" class="etiqueta">Formato de fecha</label>
+                <select id="cfg-formato-fecha" class="entrada">
+                  <option value="dd/mm/yyyy">dd/mm/aaaa</option>
+                  <option value="yyyy-mm-dd">aaaa-mm-dd</option>
+                </select>
+              </div>
+            </fieldset>
+
+            <fieldset class="grupo">
+              <legend>Ventas e inventario</legend>
+              <div class="campo"><label class="casilla"><input type="checkbox" id="cfg-stock-negativo"> Permitir stock negativo</label></div>
+              <div class="campo"><label for="cfg-stock-minimo" class="etiqueta">Stock mínimo por defecto</label><input type="number" id="cfg-stock-minimo" class="entrada" min="0" step="1" value="5"></div>
+              <div class="campo"><label for="cfg-descuento-max" class="etiqueta">Descuento máximo permitido (%)</label><input type="number" id="cfg-descuento-max" class="entrada" min="0" max="100" step="1" value="20"></div>
+              <div class="campo">
+                <span class="etiqueta">Métodos de pago habilitados</span>
+                <label class="casilla"><input type="checkbox" id="cfg-pago-efectivo" checked disabled> Efectivo</label>
+                <label class="casilla"><input type="checkbox" id="cfg-pago-qr" checked> QR</label>
+                <label class="casilla"><input type="checkbox" id="cfg-pago-transferencia" checked> Transferencia</label>
+              </div>
+            </fieldset>
+
+            <fieldset class="grupo">
+              <legend>Impresión</legend>
+              <div class="campo">
+                <label for="cfg-ancho-recibo" class="etiqueta">Ancho del recibo</label>
+                <select id="cfg-ancho-recibo" class="entrada">
+                  <option value="58">58 mm (ticket pequeño)</option>
+                  <option value="80">80 mm (ticket estándar)</option>
+                  <option value="a4">Hoja A4</option>
+                </select>
+              </div>
+              <div class="campo"><label class="casilla"><input type="checkbox" id="cfg-imprimir-auto"> Preguntar si imprimir recibo al vender</label></div>
+            </fieldset>
+
+            <fieldset class="grupo">
+              <legend>Lector de códigos</legend>
+              <div class="campo"><label class="casilla"><input type="checkbox" id="cfg-lector-enter" checked> El lector envía Enter al final del código</label></div>
+              <div class="campo"><label for="cfg-lector-largo-min" class="etiqueta">Largo mínimo del código</label><input type="number" id="cfg-lector-largo-min" class="entrada" min="1" max="20" value="4"></div>
+              <div class="campo"><label for="cfg-lector-antirrebote" class="etiqueta">Ignorar lecturas repetidas dentro de (ms)</label><input type="number" id="cfg-lector-antirrebote" class="entrada" min="0" step="50" value="600"></div>
+              <div class="campo">
+                <label for="cfg-camara" class="etiqueta">Cámara preferida</label>
+                <select id="cfg-camara" class="entrada"><option value="">Preguntar al abrir el escáner</option></select>
+              </div>
+            </fieldset>
+
+            <div class="acciones">
+              <button type="submit" class="btn btn-primario">Guardar configuración</button>
+            </div>
+          </form>
+
+          <section class="panel">
+            <h3>Copia de seguridad</h3>
+            <p class="ayuda">Los datos se guardan solo en este dispositivo y navegador. Pueden perderse si se borran los datos del navegador, si el equipo se daña o si se desinstala la aplicación. Descargue copias con regularidad. Las copias no están cifradas.</p>
+            <div class="acciones">
+              <button type="button" id="btn-exportar-respaldo" class="btn btn-primario">Exportar copia (JSON)</button>
+              <button type="button" id="btn-importar-respaldo" class="btn">Restaurar copia</button>
+              <input type="file" id="archivo-respaldo" accept=".json,application/json" hidden>
+            </div>
+          </section>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- VENTANAS MODALES                                              -->
+  <!-- ============================================================ -->
+
+  <!-- Producto: nuevo / editar -->
+  <dialog id="modal-producto" class="modal" aria-labelledby="modal-producto-titulo">
+    <form id="form-producto" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-producto-titulo">Nuevo producto</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <input type="hidden" id="prod-id">
+        <div class="campo campo-con-boton">
+          <label for="prod-codigo" class="etiqueta">Código de barras</label>
+          <div class="fila-entrada">
+            <input type="text" id="prod-codigo" class="entrada" autocomplete="off" inputmode="numeric" placeholder="Escanee o escriba el código">
+            <button type="button" id="btn-prod-escanear" class="btn">Escanear</button>
+            <button type="button" id="btn-prod-codigo-interno" class="btn">Código interno</button>
+          </div>
+          <small class="ayuda">Si el producto no tiene código, genere uno interno.</small>
+        </div>
+        <div class="campo"><label for="prod-nombre" class="etiqueta">Nombre *</label><input type="text" id="prod-nombre" class="entrada" maxlength="120" required></div>
+        <div class="campo"><label for="prod-descripcion" class="etiqueta">Descripción</label><input type="text" id="prod-descripcion" class="entrada" maxlength="200"></div>
+        <div class="rejilla-form">
+          <div class="campo"><label for="prod-categoria" class="etiqueta">Categoría *</label><input type="text" id="prod-categoria" class="entrada" list="lista-categorias" maxlength="60" required><datalist id="lista-categorias"></datalist></div>
+          <div class="campo"><label for="prod-marca" class="etiqueta">Marca</label><input type="text" id="prod-marca" class="entrada" maxlength="60"></div>
+          <div class="campo"><label for="prod-costo" class="etiqueta">Precio de costo (Bs) *</label><input type="number" id="prod-costo" class="entrada" min="0" step="0.01" required></div>
+          <div class="campo"><label for="prod-precio" class="etiqueta">Precio de venta (Bs) *</label><input type="number" id="prod-precio" class="entrada" min="0" step="0.01" required></div>
+          <div class="campo"><label for="prod-stock" class="etiqueta">Stock actual</label><input type="number" id="prod-stock" class="entrada" min="0" step="1" value="0"><small id="prod-stock-ayuda" class="ayuda" hidden>Para cambiar el stock use un ajuste en Inventario.</small></div>
+          <div class="campo"><label for="prod-stock-minimo" class="etiqueta">Stock mínimo</label><input type="number" id="prod-stock-minimo" class="entrada" min="0" step="1" value="5"></div>
+          <div class="campo">
+            <label for="prod-unidad" class="etiqueta">Unidad de medida</label>
+            <select id="prod-unidad" class="entrada">
+              <option value="unidad">Unidad</option>
+              <option value="paquete">Paquete</option>
+              <option value="caja">Caja</option>
+              <option value="kg">Kilogramo</option>
+              <option value="litro">Litro</option>
+              <option value="docena">Docena</option>
+            </select>
+          </div>
+          <div class="campo"><label for="prod-vencimiento" class="etiqueta">Fecha de vencimiento</label><input type="date" id="prod-vencimiento" class="entrada"></div>
+        </div>
+        <div class="campo"><label class="casilla"><input type="checkbox" id="prod-activo" checked> Producto activo</label></div>
+        <p id="prod-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" id="btn-guardar-producto" class="btn btn-primario">Guardar producto</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Detalle e historial de un producto -->
+  <dialog id="modal-producto-historial" class="modal modal-ancho" aria-labelledby="modal-prodhist-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-prodhist-titulo">Historial del producto</h2>
+      <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="modal-cuerpo">
+      <div id="prodhist-resumen" class="resumen-producto"></div>
+      <div class="tabla-contenedor">
+        <table class="tabla" id="tabla-prodhist">
+          <thead><tr><th>Fecha y hora</th><th>Tipo</th><th class="num">Cantidad</th><th class="num">Stock resultante</th><th>Motivo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p id="vacio-prodhist" class="vacio">Este producto aún no tiene movimientos.</p>
+    </div>
+    <footer class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </footer>
+  </dialog>
+
+  <!-- Escáner con cámara -->
+  <dialog id="modal-escaner" class="modal" aria-labelledby="modal-escaner-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-escaner-titulo">Escanear con la cámara</h2>
+      <button type="button" class="btn btn-icono" id="btn-cerrar-escaner" aria-label="Cerrar escáner">&times;</button>
+    </header>
+    <div class="modal-cuerpo">
+      <div class="campo">
+        <label for="escaner-camara" class="etiqueta">Cámara</label>
+        <select id="escaner-camara" class="entrada"><option value="">Buscando cámaras…</option></select>
+      </div>
+      <div class="escaner-visor">
+        <video id="escaner-video" playsinline muted></video>
+        <div class="escaner-guia" aria-hidden="true"></div>
+      </div>
+      <p id="escaner-estado" class="ayuda" role="status">Apunte la cámara al código de barras.</p>
+      <p id="escaner-ultimo" class="escaner-ultimo" hidden>Código detectado: <strong id="escaner-ultimo-codigo"></strong></p>
+
+      <div class="campo">
+        <label for="escaner-manual" class="etiqueta">¿No lo reconoce? Escriba el código</label>
+        <div class="fila-entrada">
+          <input type="text" id="escaner-manual" class="entrada" inputmode="numeric" autocomplete="off">
+          <button type="button" id="btn-escaner-manual" class="btn">Usar código</button>
+        </div>
+      </div>
+      <p class="ayuda">La cámara requiere permiso del navegador y funciona solo con HTTPS o localhost.</p>
+    </div>
+    <footer class="modal-pie">
+      <button type="button" id="btn-escaner-reintentar" class="btn">Reintentar</button>
+      <button type="button" id="btn-escaner-cerrar-pie" class="btn btn-primario">Cerrar</button>
+    </footer>
+  </dialog>
+
+  <!-- Producto no encontrado -->
+  <dialog id="modal-no-encontrado" class="modal" aria-labelledby="modal-noenc-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-noenc-titulo">Producto no encontrado</h2>
+      <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="modal-cuerpo">
+      <p>No existe ningún producto con el código <strong id="noenc-codigo"></strong>.</p>
+      <p>¿Desea registrarlo ahora?</p>
+    </div>
+    <footer class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cancelar</button>
+      <button type="button" id="btn-noenc-registrar" class="btn btn-primario">Registrar producto</button>
+    </footer>
+  </dialog>
+
+  <!-- Movimiento de inventario -->
+  <dialog id="modal-movimiento" class="modal" aria-labelledby="modal-mov-titulo">
+    <form id="form-movimiento" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-mov-titulo">Movimiento de inventario</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <input type="hidden" id="mov-tipo">
+        <div class="campo">
+          <label for="mov-producto-buscar" class="etiqueta">Producto *</label>
+          <input type="search" id="mov-producto-buscar" class="entrada" autocomplete="off" placeholder="Nombre o código">
+          <select id="mov-producto" class="entrada" size="4" aria-label="Resultados de producto"></select>
+        </div>
+        <div class="campo"><label for="mov-cantidad" class="etiqueta" id="mov-cantidad-etiqueta">Cantidad *</label><input type="number" id="mov-cantidad" class="entrada" step="1" required></div>
+        <p id="mov-stock-actual" class="ayuda">Seleccione un producto.</p>
+        <div class="campo"><label for="mov-motivo" class="etiqueta">Motivo *</label><input type="text" id="mov-motivo" class="entrada" maxlength="120" required placeholder="Ej. Conteo físico, merma, vencimiento"></div>
+        <p id="mov-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Registrar movimiento</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Compra -->
+  <dialog id="modal-compra" class="modal modal-ancho" aria-labelledby="modal-compra-titulo">
+    <form id="form-compra" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-compra-titulo">Nueva compra de mercadería</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <div class="rejilla-form">
+          <div class="campo"><label for="compra-fecha" class="etiqueta">Fecha *</label><input type="date" id="compra-fecha" class="entrada" required></div>
+          <div class="campo"><label for="compra-documento" class="etiqueta">N.º de documento</label><input type="text" id="compra-documento" class="entrada" maxlength="40"></div>
+          <div class="campo"><label for="compra-proveedor" class="etiqueta">Proveedor</label><select id="compra-proveedor" class="entrada"><option value="">Sin proveedor</option></select></div>
+          <div class="campo">
+            <label for="compra-metodo" class="etiqueta">Método de pago</label>
+            <select id="compra-metodo" class="entrada">
+              <option value="efectivo">Efectivo</option>
+              <option value="qr">QR</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="compra-codigo" class="etiqueta">Agregar producto por código</label>
+          <div class="fila-entrada">
+            <input type="text" id="compra-codigo" class="entrada" inputmode="numeric" autocomplete="off" placeholder="Escanee o escriba y presione Enter">
+            <button type="button" id="btn-compra-agregar" class="btn">Agregar</button>
+            <button type="button" id="btn-compra-camara" class="btn">Cámara</button>
+          </div>
+        </div>
+        <div class="campo busqueda-flotante">
+          <label for="compra-buscar" class="etiqueta">O buscar por nombre</label>
+          <input type="search" id="compra-buscar" class="entrada" autocomplete="off">
+          <ul id="compra-resultados" class="resultados-busqueda" role="listbox" hidden></ul>
+        </div>
+
+        <div class="tabla-contenedor">
+          <table class="tabla" id="tabla-compra-items">
+            <thead><tr><th>Producto</th><th class="num">Cantidad</th><th class="num">Costo unitario</th><th class="num">Subtotal</th><th><span class="solo-lectores">Quitar</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="vacio-compra-items" class="vacio">Agregue al menos un producto a la compra.</p>
+        <p class="resumen-linea">Total de la compra: <strong id="compra-total">Bs 0.00</strong></p>
+        <p id="compra-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" id="btn-guardar-compra" class="btn btn-primario">Confirmar compra</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Detalle de compra -->
+  <dialog id="modal-compra-detalle" class="modal modal-ancho" aria-labelledby="modal-compdet-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-compdet-titulo">Detalle de la compra</h2>
+      <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="modal-cuerpo" id="compra-detalle-contenido"></div>
+    <footer class="modal-pie">
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </footer>
+  </dialog>
+
+  <!-- Proveedor -->
+  <dialog id="modal-proveedor" class="modal" aria-labelledby="modal-prov-titulo">
+    <form id="form-proveedor" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-prov-titulo">Nuevo proveedor</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <input type="hidden" id="prov-id">
+        <div class="campo"><label for="prov-nombre" class="etiqueta">Nombre *</label><input type="text" id="prov-nombre" class="entrada" maxlength="100" required></div>
+        <div class="campo"><label for="prov-telefono" class="etiqueta">Teléfono</label><input type="tel" id="prov-telefono" class="entrada" maxlength="30"></div>
+        <div class="campo"><label for="prov-correo" class="etiqueta">Correo</label><input type="email" id="prov-correo" class="entrada" maxlength="100"></div>
+        <div class="campo"><label for="prov-notas" class="etiqueta">Notas</label><input type="text" id="prov-notas" class="entrada" maxlength="200"></div>
+        <p id="prov-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar proveedor</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Gasto -->
+  <dialog id="modal-gasto" class="modal" aria-labelledby="modal-gasto-titulo">
+    <form id="form-gasto" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-gasto-titulo">Nuevo gasto</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <input type="hidden" id="gasto-id">
+        <div class="campo"><label for="gasto-fecha" class="etiqueta">Fecha *</label><input type="date" id="gasto-fecha" class="entrada" required></div>
+        <div class="campo"><label for="gasto-categoria" class="etiqueta">Categoría *</label><input type="text" id="gasto-categoria" class="entrada" list="lista-categorias-gasto" maxlength="60" required><datalist id="lista-categorias-gasto"></datalist></div>
+        <div class="campo"><label for="gasto-descripcion" class="etiqueta">Descripción *</label><input type="text" id="gasto-descripcion" class="entrada" maxlength="150" required></div>
+        <div class="campo"><label for="gasto-importe" class="etiqueta">Importe (Bs) *</label><input type="number" id="gasto-importe" class="entrada" min="0.01" step="0.01" required></div>
+        <div class="campo">
+          <label for="gasto-metodo" class="etiqueta">Método de pago</label>
+          <select id="gasto-metodo" class="entrada">
+            <option value="efectivo">Efectivo</option>
+            <option value="qr">QR</option>
+            <option value="transferencia">Transferencia</option>
+          </select>
+        </div>
+        <div class="campo"><label for="gasto-observaciones" class="etiqueta">Observaciones</label><input type="text" id="gasto-observaciones" class="entrada" maxlength="200"></div>
+        <p id="gasto-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Guardar gasto</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Caja: apertura -->
+  <dialog id="modal-caja-apertura" class="modal" aria-labelledby="modal-cajaap-titulo">
+    <form id="form-caja-apertura" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-cajaap-titulo">Abrir caja</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <div class="campo"><label for="caja-monto-inicial-input" class="etiqueta">Monto inicial en efectivo (Bs) *</label><input type="number" id="caja-monto-inicial-input" class="entrada" min="0" step="0.01" required></div>
+        <div class="campo"><label for="caja-apertura-obs" class="etiqueta">Observaciones</label><input type="text" id="caja-apertura-obs" class="entrada" maxlength="200"></div>
+        <p id="caja-apertura-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Abrir caja</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Caja: ingreso / retiro -->
+  <dialog id="modal-caja-movimiento" class="modal" aria-labelledby="modal-cajamov-titulo">
+    <form id="form-caja-movimiento" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-cajamov-titulo">Movimiento de caja</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <input type="hidden" id="cajamov-tipo">
+        <div class="campo"><label for="cajamov-importe" class="etiqueta">Importe (Bs) *</label><input type="number" id="cajamov-importe" class="entrada" min="0.01" step="0.01" required></div>
+        <div class="campo"><label for="cajamov-motivo" class="etiqueta">Motivo *</label><input type="text" id="cajamov-motivo" class="entrada" maxlength="150" required></div>
+        <p id="cajamov-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primario">Registrar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Caja: cierre -->
+  <dialog id="modal-caja-cierre" class="modal" aria-labelledby="modal-cajacie-titulo">
+    <form id="form-caja-cierre" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-cajacie-titulo">Cerrar caja</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <p>Efectivo esperado: <strong id="cierre-esperado">Bs 0.00</strong></p>
+        <div class="campo"><label for="cierre-contado" class="etiqueta">Efectivo contado (Bs) *</label><input type="number" id="cierre-contado" class="entrada" min="0" step="0.01" required></div>
+        <p>Diferencia: <strong id="cierre-diferencia">Bs 0.00</strong></p>
+        <div class="campo"><label for="cierre-obs" class="etiqueta">Observaciones</label><input type="text" id="cierre-obs" class="entrada" maxlength="200"></div>
+        <p id="cierre-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-peligro">Cerrar caja</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Detalle de venta -->
+  <dialog id="modal-venta-detalle" class="modal modal-ancho" aria-labelledby="modal-ventadet-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-ventadet-titulo">Detalle de la venta</h2>
+      <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="modal-cuerpo" id="venta-detalle-contenido"></div>
+    <footer class="modal-pie">
+      <button type="button" id="btn-venta-imprimir" class="btn">Imprimir recibo</button>
+      <button type="button" id="btn-venta-anular" class="btn btn-peligro">Anular venta</button>
+      <button type="button" class="btn" data-cerrar>Cerrar</button>
+    </footer>
+  </dialog>
+
+  <!-- Anular venta -->
+  <dialog id="modal-venta-anular" class="modal" aria-labelledby="modal-anular-titulo">
+    <form id="form-venta-anular" method="dialog" novalidate>
+      <header class="modal-cabecera">
+        <h2 id="modal-anular-titulo">Anular venta</h2>
+        <button type="button" class="btn btn-icono" data-cerrar aria-label="Cerrar">&times;</button>
+      </header>
+      <div class="modal-cuerpo formulario">
+        <p>La venta <strong id="anular-numero"></strong> quedará anulada y el stock volverá al inventario. Esta acción no se puede deshacer.</p>
+        <div class="campo"><label for="anular-motivo" class="etiqueta">Motivo *</label><input type="text" id="anular-motivo" class="entrada" maxlength="150" required></div>
+        <div class="campo"><label for="anular-autorizacion" class="etiqueta">Código de autorización *</label><input type="password" id="anular-autorizacion" class="entrada" autocomplete="off" required></div>
+        <p id="anular-error" class="error-form" role="alert" hidden></p>
+      </div>
+      <footer class="modal-pie">
+        <button type="button" class="btn" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-peligro">Anular venta</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Confirmación genérica -->
+  <dialog id="modal-confirmar" class="modal" aria-labelledby="modal-conf-titulo">
+    <header class="modal-cabecera">
+      <h2 id="modal-conf-titulo">Confirmar acción</h2>
+    </header>
+    <div class="modal-cuerpo">
+      <p id="confirmar-mensaje"></p>
+    </div>
+    <footer class="modal-pie">
+      <button type="button" id="btn-confirmar-no" class="btn">Cancelar</button>
+      <button type="button" id="btn-confirmar-si" class="btn btn-primario">Aceptar</button>
+    </footer>
+  </dialog>
+
+  <!-- Recibo interno (se usa para imprimir) -->
+  <div id="area-impresion" class="area-impresion" aria-hidden="true"></div>
+
+  <noscript>
+    <p class="aviso-noscript">Esta aplicación necesita JavaScript activado para funcionar.</p>
+  </noscript>
+
+  <!-- ============================================================
+       SCRIPTS (orden obligatorio: base técnica → módulos → app)
+       Los archivos se irán creando uno por uno; mientras falten,
+       el navegador mostrará errores 404 en la consola. Es normal.
+       ============================================================ -->
+  <script src="utilidades.js"></script>
+  <script src="db.js"></script>
+  <script src="productos.js"></script>
+  <script src="inventario.js"></script>
+  <script src="lector.js"></script>
+  <script src="ventas.js"></script>
+  <script src="compras.js"></script>
+  <script src="gastos.js"></script>
+  <script src="caja.js"></script>
+  <script src="reportes.js"></script>
+  <script src="configuracion.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    // Registro del Service Worker (el archivo se crea en la etapa 6).
+    // Solo funciona con http://localhost o HTTPS, no con file://
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js').catch(function () {
+          /* Silencioso hasta que exista service-worker.js */
+        });
+      });
+    }
+  </script>
+</body>
+</html>

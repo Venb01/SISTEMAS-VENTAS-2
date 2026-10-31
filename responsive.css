@@ -1,0 +1,147 @@
+/* ==========================================================
+   responsive.css — Adaptación a tablet y celular
+   Sistema de Ventas e Inventario
+   Depende de: css/styles.css (debe cargarse antes) e index.html
+   Convención para app.js:
+     - Menú abierto en pantallas pequeñas: clase "abierto" en #sidebar
+       y quitar el atributo hidden de #sidebar-fondo.
+   Puntos de corte:
+     - hasta 1100 px: tablet horizontal
+     - hasta  900 px: tablet vertical (menú desplegable)
+     - hasta  640 px: celular
+   ========================================================== */
+
+/* ---------- Tablet horizontal (hasta 1100 px) ---------- */
+@media (max-width: 1100px) {
+  .contenido { padding: 1.25rem 1.25rem 3rem; }
+  .topbar { padding: 0 1.25rem; }
+
+  .pos { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+
+/* ---------- Tablet vertical (hasta 900 px) ---------- */
+@media (max-width: 900px) {
+  /* Menú lateral desplegable */
+  .principal { margin-left: 0; }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+    width: min(280px, 82vw);
+  }
+  .sidebar.abierto {
+    transform: translateX(0);
+    box-shadow: 8px 0 30px rgba(27, 35, 48, 0.35);
+  }
+
+  .btn-menu { display: inline-flex; }
+
+  /* Punto de venta en una sola columna */
+  .pos { grid-template-columns: minmax(0, 1fr); }
+  .pos-derecha { position: static; }
+
+  .rejilla-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Celular (hasta 640 px) ---------- */
+@media (max-width: 640px) {
+  body { font-size: 16px; } /* evita el zoom automático al enfocar campos en iOS */
+
+  .contenido { padding: 1rem 0.85rem 4rem; }
+
+  /* Barra superior compacta */
+  .topbar { gap: 0.5rem; padding: 0 0.75rem; }
+  .topbar-fecha { display: none; }
+  #btn-ir-vender { padding: 0.5rem 0.8rem; }
+  .topbar-titulo h1 { font-size: 0.98rem; }
+
+  /* Mensajes ocupan casi todo el ancho */
+  .mensajes { right: 0.5rem; left: 0.5rem; width: auto; }
+
+  /* Cabeceras y acciones */
+  .vista-cabecera { margin-bottom: 1rem; }
+  .vista-cabecera .acciones { width: 100%; }
+  .vista-cabecera .acciones .btn { flex: 1 1 calc(50% - 0.5rem); }
+  h2 { font-size: 1.2rem; }
+
+  /* Indicadores en dos columnas */
+  .indicadores,
+  .indicadores-compactos { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .indicador { padding: 0.8rem 0.85rem; }
+  .indicador h3 { font-size: 0.78rem; }
+  .indicador-valor { font-size: 1.2rem; }
+
+  /* Formularios y filtros en una columna */
+  .rejilla-form { grid-template-columns: minmax(0, 1fr); }
+  .filtros { grid-template-columns: minmax(0, 1fr); padding: 0.8rem 0.85rem 0.1rem; }
+  .fila-entrada { flex-wrap: wrap; }
+  .fila-entrada .entrada { flex: 1 1 100%; }
+  .fila-entrada .btn { flex: 1 1 calc(50% - 0.5rem); }
+
+  /* Campos y botones fáciles de tocar */
+  .entrada { min-height: 46px; }
+  .btn { min-height: 46px; }
+  .btn-chico { min-height: 38px; }
+  .entrada-grande { min-height: 56px; font-size: 1.3rem; }
+
+  /* Tablas: desplazamiento horizontal con tipografía algo menor */
+  .tabla { font-size: 0.86rem; }
+  .tabla th, .tabla td { padding: 0.55rem 0.6rem; }
+
+  /* Carrito: celdas más estrechas */
+  #tabla-carrito input[type="number"] { width: 70px; }
+  .control-cantidad input { width: 54px; }
+
+  /* Cobro */
+  .totales .total-final dd { font-size: 1.5rem; }
+  #btn-confirmar-venta { position: sticky; bottom: 0.5rem; z-index: 5; box-shadow: 0 6px 18px rgba(27, 35, 48, 0.3); }
+
+  /* Pestañas con desplazamiento */
+  .pestanas { overflow-x: auto; }
+  .pestana { white-space: nowrap; }
+
+  /* Ventanas modales a pantalla casi completa */
+  .modal,
+  .modal-ancho {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+  .modal-cuerpo { padding: 1rem; }
+  .modal-pie { padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)); }
+  .modal-pie .btn { flex: 1 1 calc(50% - 0.5rem); }
+
+  /* Escáner: visor más alto en pantallas verticales */
+  .escaner-visor { aspect-ratio: 3 / 4; }
+}
+
+/* ---------- Pantallas muy pequeñas (hasta 380 px) ---------- */
+@media (max-width: 380px) {
+  .indicadores,
+  .indicadores-compactos { grid-template-columns: minmax(0, 1fr); }
+  .topbar-acciones .chip { display: none; }
+}
+
+/* ---------- Celular en horizontal (poca altura) ---------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .topbar { position: static; }
+  .modal-cuerpo { padding: 0.75rem 1rem; }
+  .escaner-visor { aspect-ratio: 16 / 9; max-height: 60vh; }
+}
+
+/* ---------- Pantallas táctiles: zonas de toque más amplias ---------- */
+@media (pointer: coarse) {
+  .nav-link { padding: 0.8rem 0.85rem; }
+  .resultados-busqueda li { padding: 0.8rem; }
+  .casilla input { width: 22px; height: 22px; }
+}
+
+/* ---------- Aplicación instalada (PWA) con zonas seguras ---------- */
+@supports (padding: env(safe-area-inset-top)) {
+  .topbar { padding-top: env(safe-area-inset-top, 0px); height: calc(var(--alto-topbar) + env(safe-area-inset-top, 0px)); }
+  .sidebar-marca { padding-top: env(safe-area-inset-top, 0px); height: calc(var(--alto-topbar) + env(safe-area-inset-top, 0px)); }
+}
